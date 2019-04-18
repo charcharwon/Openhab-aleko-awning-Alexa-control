@@ -1,0 +1,6 @@
+//Awning switch
+Number BY_Awning
+
+//Awning states
+Number BY_AWNING_STATE
+Dimmer BY_AWNING_ALEXA "Awning" [Switchable]
