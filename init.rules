@@ -1,0 +1,13 @@
+rule "Init"
+when
+	System started
+then
+	// let openHAB settle and give other rules the chance to fire
+        createTimer(now.plusSeconds(60)) [|
+		val mqttActions = getActions("mqtt","mqtt:broker:mosquitto")
+		//set our startup awning state to 0
+    BY_AWNING_STATE.postUpdate(0)
+    //issue up command so awning is closed(calibrated)
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA8060XXXXXXXX55")
+]
+end
