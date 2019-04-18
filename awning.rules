@@ -1,0 +1,162 @@
+var Timer timer = null
+var Timer tttttimer = null
+var Timer tttimer = null
+
+rule "BY_Awning"
+
+when
+    Item BY_Awning changed 
+then
+    val mqttActions = getActions("mqtt","mqtt:broker:mosquitto")
+    switch (BY_Awning.state as DecimalType) {
+        case 1 :{
+		//Echo_Dot_TTS.sendCommand("UP Command issued" )
+		var num = (BY_AWNING_STATE.state as Number)
+		var amount = (BY_AWNING_STATE.state as Number)
+                if (num == 0) {return}
+ 		amount = num
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA8060XXXXXXXX55")
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+		var counter = 0
+		tttttimer = createTimer(now, [ |
+			if (BY_Awning.state != 1 || counter > amount) {
+			//BY_AWNING_STATE.postUpdate(num)	
+			ttttttimer = null
+		}
+		else {
+
+		counter = (counter + 1)
+		num = (num - 1)
+		if (num < 0) { num = 0}
+	    	BY_AWNING_STATE.postUpdate(num)           
+         	tttttimer.reschedule(now.plusSeconds(1))
+		}
+		])
+
+}
+
+        case 2 : {
+		//Echo_Dot_TTS.sendCommand("Stop Command issued" )
+		 mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA8060XXXXXXXXXX55")
+		 mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+	}
+        case 3 :{
+//		Echo_Dot_TTS.sendCommand("Down Command issued" )
+		var num = (BY_AWNING_STATE.state as Number)
+		var amount = (BY_AWNING_STATE.state as Number)
+		amount = 54 - num
+		if ( num > 54){return}
+		 mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA8060XXXXXXXX55")
+		 mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+		var counter = 0		
+		tttimer = createTimer(now, [ |
+		if (BY_Awning.state != 3  || counter > amount ) { 
+			//BY_AWNING_STATE.postUpdate(num)
+			tttimer = null
+		}
+		else {
+		counter = (counter + 1)
+	    	num = (num + 1 )
+		if (num>54) {num=54}
+		BY_AWNING_STATE.postUpdate(num)           
+         	tttimer.reschedule(now.plusSeconds(1))
+		}
+		])
+    }
+}
+end
+
+rule "BY_Awning Alexa"
+
+when
+    Item BY_AWNING_ALEXA received command 
+then
+    val mqttActions = getActions("mqtt","mqtt:broker:mosquitto")
+    var num = (BY_AWNING_STATE.state as Number)
+    var direction = 0
+    var amount = (BY_AWNING_STATE.state as Number)
+    var percent = (BY_AWNING_STATE.state as Number)
+    
+
+
+
+	switch (receivedCommand) {
+
+	 default: {
+  			percent=(receivedCommand as DecimalType).intValue*54/100
+			Echo_Dot_TTS.sendCommand("Setting backyard awning to "+ String::format(receivedCommand.toString)+ " percent")
+		    if (num < percent) {
+			direction = 3
+			amount = (percent-num)
+			}
+		    else if (num > percent) {
+			direction = 1
+			amount = (num-percent)
+		        }
+		    else 
+		    Echo_Dot_TTS.sendCommand(("Backyard awning is already at "+ String::format(receivedCommand.toString)+ " percent"))
+
+		}		
+	}	
+
+	
+        switch (direction){
+	
+	case 1 :{
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA80601XXXXXXXX55")
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+				
+		var counter = 0
+		timer = createTimer(now, [ |
+ 
+			if (counter > amount) {
+			mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA80601XXXXXXXX555")
+			mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+			BY_AWNING_STATE.postUpdate(num)	
+			timer = null
+		}
+
+		else {
+		counter = (counter + 1)
+		num = (num - 1 )
+	    	if (num < 0) { num = 0 }
+		BY_AWNING_STATE.postUpdate(num)
+         	timer.reschedule(now.plusSeconds(1))
+
+		}
+		])
+}
+        case 3 : {
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA8060XXXXXXXXX55")
+		mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+				
+		var counter = 0		
+		timer = createTimer(now, [ |
+
+			if (counter > amount ) { 
+			mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","AAA8060XXXXXXXX555")
+			mqttActions.publishMQTT("cmnd/sonoff-rf/rfraw","0")
+			BY_AWNING_STATE.postUpdate(num)
+			timer = null
+		}
+
+		else {
+		counter = (counter + 1)
+	    	num = (num + 1 )
+		if (num > 54) {num = 54}
+
+		BY_AWNING_STATE.postUpdate(num)           
+         	timer.reschedule(now.plusSeconds(1))
+
+		}
+		])
+
+
+
+
+
+    }
+}
+
+end
+
