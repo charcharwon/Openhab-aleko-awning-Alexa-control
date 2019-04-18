@@ -1,0 +1,5 @@
+sitemap default label="Default Sitemap" {
+
+    //Awning
+    Switch item=BY_Awning icon="awning.png" label="Awning[]"  mappings=[1="UP",2="STOP",3="DOWN"]
+    }
